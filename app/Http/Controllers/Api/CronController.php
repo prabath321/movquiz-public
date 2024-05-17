@@ -11,6 +11,8 @@ class CronController extends Controller
     //
     public function index(Request $request){
 
+        //Test
+
         $secret = $request->route('secret');
 
         if($secret=="mymovquiz@123"){
