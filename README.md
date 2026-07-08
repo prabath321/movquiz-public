@@ -41,6 +41,8 @@ composer install
 
 ### 2. Configure the environment
 
+NOTE: You can skip the steps below. Simply add your TMDB API token to the .env file (TMDB_TOKEN), and the application will work automatically.
+
 Copy the example environment file.
 
 ```bash
