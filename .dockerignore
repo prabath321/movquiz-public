@@ -1,0 +1,16 @@
+.git
+.agents
+.codex
+.env
+.env.*
+!.env.example
+node_modules
+vendor
+bootstrap/cache/*.php
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+public/hot
+npm-debug.log
+yarn-error.log
