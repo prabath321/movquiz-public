@@ -47,10 +47,13 @@ class HomeController extends BaseController
         // session()->start();
         // Session::put('test',"test");
 
-        $todaydate = date('Y-m-d');
+	$todaydate = date('Y-m-d');
+	//$todaydate = '2024-05-25';
         // Dynamically instantiate the model based on the provided class name
         $modelClass = 'App\\Models\\' . 'HomeImage';
-        $data = $modelClass::where('published_at',$todaydate)
+        $data = $modelClass::where('published_at',$todaydate)->where('type','movie')
+							     ->get();
+	$data1 = $modelClass::where('published_at',$todaydate)->where('type','tv')
         ->get();
         // $data = $modelClass::all();
         //return response()->json($data);
@@ -66,10 +69,10 @@ class HomeController extends BaseController
             array('index'=>4,'title'=>'Top Rated','img'=>$data[2]['image_url'])
         ),
         "watchlist"=>array(
-            array('index'=>1,'title'=>'Airing Today','img'=>$data[4]['image_url']),
-            array('index'=>2,'title'=>'On The Air','img'=>$data[5]['image_url']),
-            array('index'=>3,'title'=>'Popular','img'=>$data[7]['image_url']),
-            array('index'=>4,'title'=>'Top Rated','img'=>$data[6]['image_url'])
+            array('index'=>1,'title'=>'Airing Today','img'=>$data1[0]['image_url']),
+            array('index'=>2,'title'=>'On The Air','img'=>$data1[1]['image_url']),
+            array('index'=>3,'title'=>'Popular','img'=>$data1[3]['image_url']),
+            array('index'=>4,'title'=>'Top Rated','img'=>$data1[2]['image_url'])
      ),
         // "data"=>array(array("content"=>array())),
         
@@ -80,10 +83,10 @@ class HomeController extends BaseController
     }
 
     public function page($page=1){
-        $url1 = env('TMDB_URL').'movie/upcoming?language=en-US&adult=false&region=us&language=en-US&page='.$page;
-        $url2 = env('TMDB_URL').'movie/now_playing?language=en-US&adult=false&region=us&language=en-US&page='.$page;
-        $url3 = env('TMDB_URL').'movie/top_rated?language=en-US&adult=false&region=us&language=en-US&page='.$page;
-        $url4 = env('TMDB_URL').'movie/popular?language=en-US&adult=false&region=us&language=en-US&page='.$page;
+        $url1 = env('TMDB_URL').'movie/upcoming?language=en-US&adult=false&region=US&page='.$page;
+        $url2 = env('TMDB_URL').'movie/now_playing?language=en-US&adult=false&region=US&page='.$page;
+        $url3 = env('TMDB_URL').'movie/top_rated?language=en-US&adult=false&region=US&page='.$page;
+        $url4 = env('TMDB_URL').'movie/popular?language=en-US&adult=false&region=US&page='.$page;
 
         $data1 =  json_decode($this->callTMDB($url1)->getBody(), false);
         $data2 =  json_decode($this->callTMDB($url2)->getBody(), false);
@@ -166,18 +169,31 @@ class HomeController extends BaseController
 
 
 
-        $bucketName = env('AWS_BUCKET');
-        $this->s3Client->putObject([
-            'Bucket' => $bucketName,
-            'Key'    => $filename,
-            'Body'   => $imageData,
-            'ACL'    => 'public-read',
-            'ContentType' => 'image/jpeg'
-        ]);
+        // $bucketName = env('AWS_BUCKET');
+        // $this->s3Client->putObject([
+        //     'Bucket' => $bucketName,
+        //     'Key'    => $filename,
+        //     'Body'   => $imageData,
+        //     'ACL'    => 'public-read',
+        //     'ContentType' => 'image/jpeg'
+        // ]);
+
+        // Create folder if it doesn't exist
+        $folder = public_path('movie_home_images');
+
+        if (!file_exists($folder)) {
+            mkdir($folder, 0755, true);
+        }
+
+        // Save image
+        file_put_contents($folder . '/' . $filename, $imageData);
+
+        // Path to store in database
+        $imagePath = 'movie_home_images/' . $filename;
 
         //echo "Image uploaded successfully.\n";
 
-        $publicUrl = $this->s3Client->getObjectUrl($bucketName, $filename);
+        // $publicUrl = $this->s3Client->getObjectUrl($bucketName, $filename);
 
         //echo "Public URL: $publicUrl\n";
 
@@ -185,7 +201,7 @@ class HomeController extends BaseController
 
         $results = array(
             "type" => 'movie',
-            "image_url" => $publicUrl,
+            "image_url" => $imagePath,
             "published_at" => $todaydate,
             "created_at" => now()
         );

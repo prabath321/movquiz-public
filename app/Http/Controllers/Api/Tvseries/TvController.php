@@ -68,10 +68,10 @@ class TvController extends Controller
     }
 
     public function page($page=1){
-        $url1 = env('TMDB_URL').'tv/airing_today?language=en-US&adult=false&region=us&language=en-US&page='.$page;
-        $url2 = env('TMDB_URL').'tv/on_the_air??language=en-US&adult=false&region=us&language=en-US&page='.$page;
-        $url3 = env('TMDB_URL').'tv/top_rated?language=en-US&adult=false&region=us&language=en-US&page='.$page;
-        $url4 = env('TMDB_URL').'tv/popular?language=en-US&adult=false&region=us&language=en-US&page='.$page;
+        $url1 = env('TMDB_URL').'tv/airing_today?language=en-US&region=US&page='.$page;
+        $url2 = env('TMDB_URL').'tv/on_the_air??language=en-US&region=US&page='.$page;
+        $url3 = env('TMDB_URL').'tv/top_rated?language=en-US&region=US&page='.$page;
+        $url4 = env('TMDB_URL').'tv/popular?language=en-US&region=US&page='.$page;
 
         $data1 =  json_decode($this->callTMDB($url1)->getBody(), false);
         $data2 =  json_decode($this->callTMDB($url2)->getBody(), false);
@@ -154,26 +154,35 @@ class TvController extends Controller
 
 
 
-        $bucketName = env('AWS_BUCKET');
-        $this->s3Client->putObject([
-            'Bucket' => $bucketName,
-            'Key'    => $filename,
-            'Body'   => $imageData,
-            'ACL'    => 'public-read',
-            'ContentType' => 'image/jpeg'
-        ]);
+        // $bucketName = env('AWS_BUCKET');
+        // $this->s3Client->putObject([
+        //     'Bucket' => $bucketName,
+        //     'Key'    => $filename,
+        //     'Body'   => $imageData,
+        //     'ACL'    => 'public-read',
+        //     'ContentType' => 'image/jpeg'
+        // ]);
+
+        // $publicUrl = $this->s3Client->getObjectUrl($bucketName, $filename);
 
 
-    
-        
+        $folder = public_path('tv_home_images');
 
-        $publicUrl = $this->s3Client->getObjectUrl($bucketName, $filename);
+        if (!file_exists($folder)) {
+            mkdir($folder, 0755, true);
+        }
+
+        // Save image
+        file_put_contents($folder . '/' . $filename, $imageData);
+
+        // Path to store in database
+        $imagePath = 'tv_home_images/' . $filename;
 
         $todaydate = date('Y-m-d');
 
         $results = array(
             "type" => 'tv',
-            "image_url" => $publicUrl,
+            "image_url" => $imagePath,
             "published_at" => $todaydate,
             "created_at" => now()
         );

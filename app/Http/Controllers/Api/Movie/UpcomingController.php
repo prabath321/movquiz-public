@@ -23,6 +23,8 @@ class UpcomingController extends BaseController
 
     public function upcoming(Request $request){
 
+        
+
         $keyword = $request->route('keyword');
         $keyword1 = $request->route('keyword1');
         $keyword2 = $request->route('keyword2');
@@ -33,14 +35,14 @@ class UpcomingController extends BaseController
             $question_content = 'TV Series';
         }
 
-         
-        $url1 = env('TMDB_URL').$keyword."/".$keyword1.'?language=en-US&adult=false&region=us&language=en-US&page=1';
-
-        $url2 = env('TMDB_URL').$keyword."/".$keyword1.'?language=en-US&adult=false&region=us&language=en-US&page=2';
         
-        $url3 = env('TMDB_URL').$keyword."/".$keyword1.'?language=en-US&adult=false&region=us&language=en-US&page=3';
+        $url1 = env('TMDB_URL').$keyword."/".$keyword1.'?language=en-US&adult=false&region=US&page=1';
 
-        $url4 = env('TMDB_URL').$keyword."/".$keyword1.'?language=en-US&adult=false&region=us&language=en-US&page=4';
+        $url2 = env('TMDB_URL').$keyword."/".$keyword1.'?language=en-US&adult=false&region=US&page=2';
+        
+        $url3 = env('TMDB_URL').$keyword."/".$keyword1.'?language=en-US&adult=false&region=&page=3';
+
+        $url4 = env('TMDB_URL').$keyword."/".$keyword1.'?language=en-US&adult=false&region=US&page=4';
 
         $data1 =  json_decode($this->callTMDB($url1)->getBody(), true);
 
@@ -53,7 +55,7 @@ class UpcomingController extends BaseController
         // echo "<pre>";
         // print_r($data1);
         // echo "</pre>";
-        
+        // die();
         // echo "<pre>";
         // print_r($data2);
         // echo "</pre>";
@@ -126,7 +128,8 @@ class UpcomingController extends BaseController
             $final_questions[$counter] = array($temp_arr, $in_answers_correct[$counter]);
         }
 
-        $todaydate = date('Y-m-d');
+	$todaydate = date('Y-m-d');
+	//$todaydate = '2024-05-25';
         //echo "<br />";
         //echo "Answers Question";
         //print_r($final_questions);
@@ -141,16 +144,34 @@ class UpcomingController extends BaseController
             $imageData = base64_decode(str_replace('data:image/jpeg;base64,', '', $base64URLData)); 
             $filename = $keyword1."_".$series."_".uniqid(). '.jpg';
 
-            $bucketName = env('AWS_BUCKET');
-            $this->s3Client->putObject([
-                'Bucket' => $bucketName,
-                'Key'    => $filename,
-                'Body'   => $imageData,
-                'ACL'    => 'public-read',
-                'ContentType' => 'image/jpeg'
-            ]);
+            // $bucketName = env('AWS_BUCKET');
+            // $this->s3Client->putObject([
+            //     'Bucket' => $bucketName,
+            //     'Key'    => $filename,
+            //     'Body'   => $imageData,
+            //     'ACL'    => 'public-read',
+            //     'ContentType' => 'image/jpeg'
+            // ]);
 
-            $public_url = $this->s3Client->getObjectUrl($bucketName, $filename);
+            // $public_url = $this->s3Client->getObjectUrl($bucketName, $filename);
+            // echo "<pre />";
+            // var_dump($array_with_backdrops);
+            // echo "<pre />";
+            // die();
+
+
+            // Create folder if it doesn't exist
+            $folder = public_path('movie_and_tv_images');
+
+            if (!file_exists($folder)) {
+                mkdir($folder, 0755, true);
+            }
+
+            // Save image
+            file_put_contents($folder . '/' . $filename, $imageData);
+
+            // Path to store in database
+            $imagePath = 'movie_and_tv_images/' . $filename;
 
 
             $results += array(($questions_counter-1)=>array(
@@ -162,7 +183,7 @@ class UpcomingController extends BaseController
                 "choice3" => $array_with_backdrops[$questions[0][2]][$keyword2],
                 "choice4" => $array_with_backdrops[$questions[0][3]][$keyword2],
                 "answer"  => array_search($questions[1], $questions[0])+1,
-                "backdrop_url" => $public_url,
+                "backdrop_url" => $imagePath,
                 "published_at" => $todaydate,
                 "created_at" => now()
 
